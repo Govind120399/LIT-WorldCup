@@ -1,0 +1,1023 @@
+Here is your fully updated, integrated `index.html` file.
+
+The application architecture has been updated from a single-file `localStorage` configuration to an asynchronous client framework that leverages the live cloud backend through your module setup (`auth.js`, `firestore.js`, and `matches.js`).
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WC26 Predictor">
+<meta name="theme-color" content="#020617">
+<title>⚽ WC 2026 Predictor</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiV0MgMjAyNiBQcmVkaWN0b3IiLCJzaG9ydF9uYW1lIjoiV0MyNiIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMDIwNjE3IiwidGhlbWVfY29sb3IiOiIjMDBENEZGIn0=">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#020617;--s1:#0A192F;--s2:#0d2244;--s3:#112a55;
+  --p:#00D4FF;--gold:#FFD700;--acc:#FF6B35;
+  --tx:#e2e8f0;--mu:#64748b;--bd:#1e3a5f;
+  --gn:#22c55e;--rd:#ef4444;--pu:#a855f7;
+  --nav-h:64px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overscroll-behavior:none}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+  min-height:100%;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font-family:inherit}
+input[type=number]::-webkit-inner-spin-button{opacity:1;width:40px;height:40px}
+
+/* ── Particles bg ── */
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.pt{position:absolute;border-radius:50%;animation:ptfloat linear infinite;will-change:transform}
+@keyframes ptfloat{from{transform:translateY(110vh) rotate(0deg)}to{transform:translateY(-60px) rotate(720deg)}}
+
+/* ── App shell ── */
+#app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+.page{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 0 calc(var(--nav-h) + var(--safe-b) + 8px);-webkit-overflow-scrolling:touch}
+.inner{max-width:540px;margin:0 auto;padding:16px}
+
+/* ── Header ── */
+.hdr{
+  position:sticky;top:0;z-index:80;
+  background:rgba(2,6,23,0.92);
+  border-bottom:1px solid var(--bd);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));
+}
+.hdr-in{max-width:540px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--p),#0066ff);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.logo-text{font-size:13px;font-weight:700;color:var(--p);line-height:1}
+.logo-sub{font-size:9px;color:var(--mu);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
+.ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid var(--bd);cursor:pointer;transition:border-color .2s;flex-shrink:0}
+.ava:active{border-color:var(--p)}
+
+/* ── Bottom nav ── */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;z-index:80;
+  background:rgba(10,25,47,0.97);border-top:1px solid var(--bd);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding-bottom:var(--safe-b);
+}
+.bnav-in{display:flex;max-width:540px;margin:0 auto}
+.nb{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:9px 4px 10px;border:none;background:none;
+  color:var(--mu);cursor:pointer;transition:color .15s;
+  font-size:10px;font-weight:500;-webkit-tap-highlight-color:transparent;
+  min-height:var(--nav-h);
+}
+.nb.on{color:var(--p)}
+.nb .ni{font-size:20px;line-height:1;transition:transform .15s}
+.nb.on .ni{transform:scale(1.15)}
+
+/* ── Cards ── */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:14px}
+.card:active{border-color:rgba(0,212,255,0.35)}
+.card-sm{padding:13px 15px}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:32px 16px 20px}
+.hbadge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);
+  border-radius:20px;padding:4px 13px;font-size:11px;color:var(--p);
+  margin-bottom:18px;animation:glow 2.5s ease-in-out infinite;
+}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,.3)}50%{box-shadow:0 0 0 6px rgba(0,212,255,0)}}
+.hero h1{
+  font-size:clamp(26px,7vw,40px);font-weight:800;line-height:1.1;margin-bottom:10px;
+  background:linear-gradient(135deg,#fff 0%,var(--p) 55%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero p{color:var(--mu);font-size:14px;max-width:300px;margin:0 auto 24px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:13px 20px;border-radius:12px;font-size:15px;font-weight:600;
+  cursor:pointer;border:none;white-space:nowrap;transition:transform .1s,box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.btn:active{transform:scale(0.97)}
+.btn-p{background:linear-gradient(135deg,var(--p),#0099cc);color:#000}
+.btn-p:active{box-shadow:0 0 20px rgba(0,212,255,.35)}
+.btn-s{background:var(--s2);border:1px solid var(--bd);color:var(--tx)}
+.btn-s:active{border-color:var(--p)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#ff9500);color:#000}
+.btn-gold:active{box-shadow:0 0 20px rgba(255,215,0,.35)}
+.btn-danger{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:var(--rd)}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:10px}
+.btn-w{width:100%}
+.btn:disabled{opacity:.45;pointer-events:none}
+
+/* ── Inputs ── */
+.inp{
+  width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:12px;
+  padding:13px 14px;color:var(--tx);font-size:15px;outline:none;
+  transition:border-color .2s;-webkit-appearance:none;appearance:none;
+}
+.inp:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(0,212,255,.1)}
+.inp::placeholder{color:var(--mu)}
+.lbl{display:block;font-size:13px;color:var(--mu);margin-bottom:6px;font-weight:500}
+.fg{margin-bottom:15px}
+
+/* ── Section title ── */
+.stitle{font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+
+/* ── Match card ── */
+.mc{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:15px;margin-bottom:11px;cursor:pointer;transition:border-color .2s}
+.mc:active{border-color:rgba(0,212,255,.4);transform:scale(0.99)}
+.mc-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.mc-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.team{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tflag{font-size:32px;line-height:1}
+.tname{font-size:11px;font-weight:600;text-align:center;color:var(--tx);line-height:1.2}
+.vs-box{display:flex;flex-direction:column;align-items:center;gap:2px}
+.vs{font-size:11px;color:var(--mu);font-weight:600}
+.sdis{font-size:24px;font-weight:800;color:var(--gold);letter-spacing:2px}
+
+/* ── Prediction input ── */
+.sinp-row{display:grid;grid-template-columns:1fr 32px 1fr;gap:6px;align-items:center;margin-top:13px;padding-top:13px;border-top:1px solid var(--bd)}
+.sinp{
+  width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;
+  padding:10px 6px;color:var(--tx);font-size:24px;font-weight:700;text-align:center;
+  outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.sinp:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(0,212,255,.1)}
+.sdash{font-size:20px;font-weight:700;color:var(--mu);text-align:center}
+
+/* ── Quick pick buttons ── */
+.qpicks{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:11px}
+.qp{padding:7px 10px;font-size:13px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);cursor:pointer;font-weight:600;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+.qp:active{border-color:var(--p);background:var(--s3);color:var(--p)}
+
+/* ── Leaderboard ── */
+.lbr{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:13px;margin-bottom:8px;background:var(--s2)}
+.lbr.r1{background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,215,0,.04));border:1px solid rgba(255,215,0,.22)}
+.lbr.r2{background:linear-gradient(135deg,rgba(192,192,192,.1),rgba(192,192,192,.03));border:1px solid rgba(192,192,192,.18)}
+.lbr.r3{background:linear-gradient(135deg,rgba(205,127,50,.1),rgba(205,127,50,.03));border:1px solid rgba(205,127,50,.18)}
+.lbr.me{border-color:rgba(0,212,255,.45)!important;background:rgba(0,212,255,.06)!important}
+.lbrank{font-size:14px;font-weight:800;min-width:26px;text-align:center}
+.rk1{color:var(--gold)}.rk2{color:#c0c0c0}.rk3{color:#cd7f32}
+.lbava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.lbname{flex:1;font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbpts{font-size:19px;font-weight:800;color:var(--p)}
+.lbacc{font-size:10px;color:var(--mu)}
+.ptbadge{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:2px 7px;font-size:11px;color:var(--p);font-weight:600;flex-shrink:0}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:3px;background:var(--s2);border-radius:11px;padding:3px;margin-bottom:18px}
+.tab{flex:1;padding:8px 4px;border:none;background:none;color:var(--mu);cursor:pointer;border-radius:9px;font-size:13px;font-weight:500;transition:all .18s;-webkit-tap-highlight-color:transparent}
+.tab.on{background:var(--s3);color:var(--p);font-weight:700}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.bl{background:rgba(239,68,68,.15);color:var(--rd);border:1px solid rgba(239,68,68,.3);animation:glow 1.5s infinite}
+.bu{background:rgba(0,212,255,.1);color:var(--p);border:1px solid rgba(0,212,255,.25)}
+.bd2{background:rgba(100,116,139,.13);color:var(--mu);border:1px solid var(--bd)}
+.blk{background:rgba(168,85,247,.1);color:var(--pu);border:1px solid rgba(168,85,247,.3)}
+
+/* ── Points tags ── */
+.ptag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0}
+.pe{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid rgba(255,215,0,.3)}
+.pc{background:rgba(34,197,94,.15);color:var(--gn);border:1px solid rgba(34,197,94,.3)}
+.pw{background:rgba(239,68,68,.1);color:var(--rd);border:1px solid rgba(239,68,68,.22)}
+.p0{background:rgba(100,116,139,.1);color:var(--mu);border:1px solid var(--bd)}
+
+/* ── Modal ── */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:150;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:faIn .2s}
+@keyframes faIn{from{opacity:0}to{opacity:1}}
+.mod{
+  background:var(--s1);border:1px solid var(--bd);width:100%;max-width:540px;
+  border-radius:20px 20px 0 0;padding-bottom:calc(20px + var(--safe-b));
+  animation:slUp .28s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;
+}
+@keyframes slUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mod-hdr{padding:16px 18px 0;display:flex;justify-content:space-between;align-items:center}
+.mod-pull{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:8px auto 0;display:block}
+.mod-title{font-size:17px;font-weight:700}
+.mod-x{background:var(--s2);border:none;color:var(--mu);cursor:pointer;border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.mod-body{padding:18px}
+
+/* ── Stats grid ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.scard{background:var(--s2);border-radius:13px;padding:14px;text-align:center;border:1px solid var(--bd)}
+.sval{font-size:26px;font-weight:800;color:var(--p)}
+.slbl{font-size:10px;color:var(--mu);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Auth ── */
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.acard{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:28px 22px;width:100%;max-width:400px;position:relative;z-index:1}
+.alogo{text-align:center;margin-bottom:24px}
+.alogo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--p),#0066ff);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px}
+.alogo h2{font-size:20px;font-weight:700}
+.alogo p{font-size:13px;color:var(--mu);margin-top:3px}
+
+/* ── Toast ── */
+#toasts{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:400px;pointer-events:none}
+.toast{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;animation:tsIn .3s ease;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ts{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08);color:var(--gn)}
+.te{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--rd)}
+.ti{border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.07);color:var(--p)}
+@keyframes tsIn{from{transform:translateY(-16px) scale(.95);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+
+/* ── Confetti ── */
+#cfti{position:fixed;inset:0;pointer-events:none;z-index:200}
+.cf{position:absolute;top:-20px;animation:cffall linear forwards;border-radius:2px}
+@keyframes cffall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ── League card ── */
+.lcard{background:linear-gradient(135deg,var(--s1) 0%,var(--s2) 100%);border:1px solid var(--bd);border-radius:16px;padding:18px;cursor:pointer;transition:border-color .2s;margin-bottom:12px;position:relative;overflow:hidden}
+.lcard::before{content:'';position:absolute;top:0;right:0;width:70px;height:70px;background:radial-gradient(circle,rgba(0,212,255,.15) 0%,transparent 70%)}
+.lcard:active{border-color:rgba(0,212,255,.45);transform:scale(0.99)}
+.lcode{font-size:10px;letter-spacing:3px;color:var(--p);text-transform:uppercase;background:rgba(0,212,255,.1);padding:2px 8px;border-radius:5px;display:inline-block;margin-bottom:7px}
+.chip{display:inline-flex;align-items:center;gap:3px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--mu)}
+
+/* ── Warn box ── */
+.warn{background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.3);border-radius:9px;padding:9px 12px;font-size:12px;color:#ff9466;display:flex;align-items:center;gap:6px;margin-bottom:12px}
+
+/* ── Utils ── */
+.flex{display:flex}.ic{align-items:center}.jb{justify-content:space-between}.g2{gap:8px}.g3{gap:12px}
+.mt1{margin-top:4px}.mt2{margin-top:8px}.mt3{margin-top:12px}.mt4{margin-top:16px}.mt5{margin-top:20px}
+.tsm{font-size:13px}.txs{font-size:11px}.tmu{color:var(--mu)}.tp{color:var(--p)}.tgold{color:var(--gold)}.tgn{color:var(--gn)}.trd{color:var(--rd)}
+.bold{font-weight:700}.w600{font-weight:600}.tc{text-align:center}
+.wf{width:100%}
+.empty{text-align:center;padding:48px 20px}
+.empty .ei{font-size:52px;margin-bottom:12px}
+.empty p{font-size:14px;color:var(--mu);margin-bottom:16px}
+hr{border:none;border-top:1px solid var(--bd);margin:14px 0}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.scrollx::-webkit-scrollbar{display:none}
+.grphdr{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--mu);padding:6px 2px 3px}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div id="toasts"></div>
+<div id="cfti"></div>
+<div id="root"></div>
+
+<script type="module">
+'use strict';
+
+import { MATCHES } from './matches.js';
+import { watchAuthState, registerUser, loginUser, logoutUser } from './auth.js';
+import { 
+  fetchResults, updateMatchResult, dbCreateLeague, dbJoinLeague, 
+  dbLeaveLeague, fetchMyLeagues, fetchPredictions, dbSavePrediction, fetchUsersList 
+} from './firestore.js';
+
+// ═══════════════════════════════════════════════════════════════
+// CLOUD SYNC STATE CONTEXT
+// ═══════════════════════════════════════════════════════════════
+let GlobalResults = {};
+let MyLeaguesList = [];
+let ActiveLeaguePredictions = [];
+let CurrentLeagueUsers = [];
+
+// ═══════════════════════════════════════════════════════════════
+// UI ENGINE APP STATE
+// ═══════════════════════════════════════════════════════════════
+let U = null; 
+let PG = 'home';
+let AL = null; 
+let MTAB = 'upcoming';
+let MOD = null;
+let MID = null; 
+let AM = 'login';
+
+// ═══════════════════════════════════════════════════════════════
+// CLOUD SYNCHRONIZATION DATA LAYER
+// ═══════════════════════════════════════════════════════════════
+async function syncAppData() {
+  try {
+    GlobalResults = await fetchResults();
+    if (U) {
+      MyLeaguesList = await fetchMyLeagues(U.id);
+      
+      if (MyLeaguesList.length > 0 && !AL) {
+        AL = MyLeaguesList[0].id;
+      }
+      
+      if (AL) {
+        ActiveLeaguePredictions = await fetchPredictions(AL);
+        const activeLeague = MyLeaguesList.find(l => l.id === AL);
+        const userIds = activeLeague ? activeLeague.members.map(m => m.userId) : [];
+        CurrentLeagueUsers = await fetchUsersList(userIds);
+      }
+    }
+    render();
+  } catch (e) {
+    toast('Error syncing data: ' + e.message, 'e');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATCH HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getMatch(id){
+  const base = {...MATCHES.find(m => m.id === id)};
+  const r = GlobalResults[id];
+  if(r){ base.homeScore = r.h; base.awayScore = r.a; base.status = 'done'; }
+  else{ base.homeScore = null; base.awayScore = null; base.status = 'upcoming'; }
+  return base;
+}
+function allMatches(){ return MATCHES.map(m => getMatch(m.id)); }
+function isLocked(m){
+  if(m.status === 'done') return true;
+  const dt = new Date(m.date + 'T18:00:00'); // Baseline standard match time window
+  return Date.now() >= dt.getTime() - 30 * 60 * 1000;
+}
+function timeUntil(m){
+  const dt = new Date(m.date + 'T18:00:00');
+  const d = (dt.getTime() - 30 * 60 * 1000) - Date.now();
+  if(d <= 0) return null;
+  const h = Math.floor(d / 3600000), mn = Math.floor((d % 3600000) / 60000);
+  if(h >= 48) return Math.floor(h / 24) + 'd left';
+  if(h > 0) return h + 'h ' + mn + 'm left';
+  return mn + 'm left';
+}
+function fmtDate(d){
+  return new Date(d).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+}
+function flagOf(s){ return s.split(' ')[0]; }
+function nameOf(s){ return s.split(' ').slice(1).join(' '); }
+
+// ═══════════════════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════════════════
+function calcPts(pred, match){
+  const {homeScore: ah, awayScore: aa, status} = match;
+  if(status !== 'done' || ah === null || aa === null) return null;
+  const ph = pred.h, pa = pred.a;
+  if(ph === ah && pa === aa) return 10;
+  const pr = ph > pa ? 'h' : ph < pa ? 'a' : 'd';
+  const ar = ah > aa ? 'h' : ah < aa ? 'a' : 'd';
+  if(pr !== ar) return 0;
+  const diff = Math.abs((ph - pa) - (ah - aa));
+  if(diff === 0) return 5;
+  if(diff > 2) return -2;
+  return 3;
+}
+function ptClass(p){ if(p === null) return 'p0'; if(p >= 10) return 'pe'; if(p > 0) return 'pc'; if(p < 0) return 'pw'; return 'p0'; }
+function ptLabel(p){ if(p === null) return 'Pending'; if(p >= 10) return '🎯 +10!'; if(p > 0) return '+' + p; if(p < 0) return '' + p; return '0 pts'; }
+
+// ═══════════════════════════════════════════════════════════════
+// LEADERBOARD GENERATION
+// ═══════════════════════════════════════════════════════════════
+function getLB(lid){
+  const league = MyLeaguesList.find(l => l.id === lid);
+  if(!league) return [];
+  return league.members.map(m => {
+    const userProfile = CurrentLeagueUsers.find(u => u.id === m.userId);
+    const preds = ActiveLeaguePredictions.filter(p => p.userId === m.userId);
+    let total = 0, exact = 0, wins = 0;
+    preds.forEach(p => {
+      const match = getMatch(p.matchId);
+      const pts = calcPts(p, match);
+      if(pts !== null){
+        total += pts;
+        if(pts >= 10) exact++;
+        if(pts > 0) wins++;
+      }
+    });
+    return {
+      userId: m.userId,
+      name: userProfile?.name || 'Unknown User',
+      total,
+      n: preds.length,
+      exact,
+      wins,
+      acc: preds.length ? Math.round(wins / preds.length * 100) : 0
+    };
+  }).sort((a, b) => b.total - a.total || b.n - a.n);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COLORS & STYLING UTILS
+// ═══════════════════════════════════════════════════════════════
+const COLS = ['#00D4FF','#a855f7','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#10b981','#f97316','#3b82f6'];
+function col(n){ return COLS[(n || '?').charCodeAt(0) % COLS.length]; }
+function ini(n){ return (n || '?')[0].toUpperCase(); }
+
+// ═══════════════════════════════════════════════════════════════
+// TOASTS & CONFETTI
+// ═══════════════════════════════════════════════════════════════
+function toast(msg, type = 'i'){
+  const w = document.getElementById('toasts'); if(!w) return;
+  const t = document.createElement('div');
+  t.className = 'toast t' + type;
+  t.innerHTML = (type === 's' ? '✓ ' : type === 'e' ? '✕ ' : 'ℹ ') + msg;
+  w.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function confetti(){
+  const w = document.getElementById('cfti'); if(!w) return;
+  const cs = ['#FFD700','#00D4FF','#22c55e','#a855f7','#ef4444','#f59e0b'];
+  w.innerHTML = Array.from({length: 70}, (_, i) => {
+    const c = cs[i % cs.length], l = Math.random() * 100, s = .4 + Math.random() * .6, d = 1 + Math.random() * 2.5, del = Math.random() * .6, sz = 5 + s * 7;
+    return `<div class="cf" style="left:${l}%;width:${sz}px;height:${sz}px;background:${c};animation-duration:${d}s;animation-delay:${del}s;transform:rotate(${Math.random() * 360}deg)"></div>`;
+  }).join('');
+  setTimeout(() => w.innerHTML = '', 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER CORE
+// ═══════════════════════════════════════════════════════════════
+function render(){
+  const root = document.getElementById('root');
+  if(!U){ root.innerHTML = rAuth(); bAuth(); return; }
+  root.innerHTML = `${rHdr()}<div class="page"><div class="inner">${rPage()}</div></div>${rNav()}${MOD ? rModal() : ''}`;
+  bEvents();
+}
+
+// ─── AUTH TEMPLATES ───────────────────────────────────────────
+function rAuth(){
+  return `<div class="bg" style="position:relative;z-index:1"><div class="auth">
+    <div class="acard">
+      <div class="alogo">
+        <div class="alogo-icon">⚽</div>
+        <h2>WC 2026 Predictor</h2>
+        <p>Predict. Compete. Win.</p>
+      </div>
+      <div class="tabs">
+        <button class="tab ${AM === 'login' ? 'on' : ''}" id="btn-tab-login">Sign In</button>
+        <button class="tab ${AM === 'register' ? 'on' : ''}" id="btn-tab-register">Register</button>
+      </div>
+      ${AM === 'login' ? `
+        <div class="fg"><label class="lbl">Email</label><input class="inp" id="le" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="lbl">Password</label><input class="inp" id="lp" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+        <button class="btn btn-p btn-w" id="btn-do-login" style="margin-bottom:10px">Sign In</button>
+        <button class="btn btn-s btn-w" id="btn-demo-login">⚡ Try Demo</button>
+      ` : `
+        <div class="fg"><label class="lbl">Your name</label><input class="inp" id="rn" type="text" autocomplete="name" placeholder="e.g. Rahul Sharma"></div>
+        <div class="fg"><label class="lbl">Email</label><input class="inp" id="re" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></div>
+        <div class="fg"><label class="lbl">Password</label><input class="inp" id="rp" type="password" autocomplete="new-password" placeholder="Min 4 characters"></div>
+        <button class="btn btn-p btn-w" id="btn-do-register">Create Account</button>
+      `}
+      <div style="margin-top:14px;font-size:12px;color:var(--mu);text-align:center">Each friend registers their own account, then joins your league with the code</div>
+    </div>
+  </div></div>`;
+}
+
+function bAuth(){
+  initParts();
+  document.getElementById('btn-tab-login')?.addEventListener('click', () => { AM = 'login'; render(); });
+  document.getElementById('btn-tab-register')?.addEventListener('click', () => { AM = 'register'; render(); });
+  document.getElementById('btn-do-login')?.addEventListener('click', () => window.doLogin());
+  document.getElementById('btn-demo-login')?.addEventListener('click', () => window.doDemoLogin());
+  document.getElementById('btn-do-register')?.addEventListener('click', () => window.doRegister());
+}
+
+// ─── GLOBAL UTILITY INTERACTION ASSIGNMENTS ───────────────────
+window.doLogin = async () => {
+  const e = v('le'), p = v('lp');
+  if(!e || !p) return toast('Fill in all fields', 'e');
+  try {
+    U = await loginUser(e, p);
+    toast('Welcome back, ' + U.name + '! 👋', 's');
+    await syncAppData();
+  } catch(err) { toast(err.message, 'e'); }
+};
+
+window.doRegister = async () => {
+  const n = v('rn'), e = v('re'), p = v('rp');
+  if(!n || !e || !p) return toast('Fill in all fields', 'e');
+  if(p.length < 4) return toast('Password too short', 'e');
+  try {
+    U = await registerUser(n, e, p);
+    toast('Welcome ' + U.name + '! 🎉', 's');
+    await syncAppData();
+  } catch(err) { toast(err.message, 'e'); }
+};
+
+window.doDemoLogin = async () => {
+  try {
+    U = await loginUser('demo@wc26.app', 'demo');
+    toast('Demo mode active ⚡', 's');
+    await syncAppData();
+  } catch {
+    try {
+      U = await registerUser('Demo Player', 'demo@wc26.app', 'demo');
+      toast('Demo context configured ⚡', 's');
+      await syncAppData();
+    } catch(err) { toast(err.message, 'e'); }
+  }
+};
+
+window.go = (page, extras = {}) => {
+  Object.assign(window._s || (window._s = {}), extras);
+  PG = page; MOD = null; render();
+  document.querySelector('.page')?.scrollTo(0,0);
+};
+
+function v(id){ const el = document.getElementById(id); return el?.value?.trim() || ''; }
+
+// ─── RUNTIME PAGE SHELL WRAPPERS ──────────────────────────────
+function rHdr(){
+  return `<div class="hdr"><div class="hdr-in">
+    <div class="logo">
+      <div class="logo-icon">⚽</div>
+      <div><div class="logo-text">WC 2026</div><div class="logo-sub">Predictor</div></div>
+    </div>
+    <div class="ava" style="background:${col(U?.name)}" id="hdr-profile-trigger">${ini(U?.name)}</div>
+  </div></div>`;
+}
+
+function rNav(){
+  return `<div class="bnav"><div class="bnav-in">${NAVS.map(([id,ic,lb]) => `
+    <button class="nb ${PG === id ? 'on' : ''}" id="nav-link-${id}">
+      <span class="ni">${ic}</span><span>${lb}</span>
+    </button>`).join('')}</div></div>`;
+}
+
+function rPage(){
+  switch(PG){
+    case 'home': return rHome();
+    case 'leagues': return rLeagues();
+    case 'matches': return rMatches();
+    case 'leaderboard': return rLB();
+    case 'profile': return rProfile();
+    case 'league': return rLeagueDetail();
+    case 'predict': return rPredict();
+    default: return rHome();
+  }
+}
+
+// ─── VIEW CONTROLLERS ─────────────────────────────────────────
+function rHome(){
+  const ms = allMatches();
+  const upcoming = ms.filter(m => !isLocked(m));
+  const myPreds = ActiveLeaguePredictions.filter(p => p.userId === U.id).length;
+  return `
+    <div class="hero">
+      <div class="hbadge">⚽ FIFA World Cup 2026</div>
+      <h1>Your Prediction<br>League</h1>
+      <p>Predict scores, beat your friends, top the board.</p>
+      <div class="flex g2" style="justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="MOD='cl';render()">+ Create League</button>
+        <button class="btn btn-s" onclick="MOD='jl';render()">Join with Code</button>
+      </div>
+    </div>
+
+    <div class="sgrid">
+      <div class="scard"><div class="sval">${upcoming.length}</div><div class="slbl">Open to Predict</div></div>
+      <div class="scard"><div class="sval">${myPreds}</div><div class="slbl">My Predictions</div></div>
+      <div class="scard"><div class="sval">${MyLeaguesList.length}</div><div class="slbl">My Leagues</div></div>
+      <div class="scard"><div class="sval">${MATCHES.length}</div><div class="slbl">Total Matches</div></div>
+    </div>
+
+    ${MyLeaguesList.length ? `
+      <div class="stitle">🏆 My Leagues</div>
+      ${MyLeaguesList.map(l => {
+        const lb = getLB(l.id), pos = lb.findIndex(r => r.userId === U.id) + 1;
+        const me = lb.find(r => r.userId === U.id);
+        return `<div class="lcard" onclick="AL='${l.id}';go('league')">
+          <div class="lcode">${l.code}</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">${l.name}</div>
+          <div class="flex g2" style="flex-wrap:wrap">
+            <span class="chip">👥 ${l.members.length}</span>
+            ${pos ? `<span class="chip">📍 #${pos}</span>` : ''}
+            <span class="chip">⭐ ${me?.total || 0} pts</span>
+          </div>
+        </div>`;
+      }).join('')}
+    ` : `
+      <div class="card" style="text-align:center;padding:30px 18px">
+        <div style="font-size:44px;margin-bottom:10px">🏆</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">No leagues yet</div>
+        <div class="tmu tsm" style="margin-bottom:16px">Create a league and share the code with your mates</div>
+        <button class="btn btn-gold" onclick="MOD='cl';render()">Create Your League</button>
+      </div>
+    `}
+
+    <div class="stitle mt5">⚡ Next Up</div>
+    ${upcoming.slice(0,4).map(m => rMatchCard(m, true)).join('')}
+  `;
+}
+
+function rLeagues(){
+  return `
+    <div class="mt4">
+      <div class="flex ic jb" style="margin-bottom:16px">
+        <div class="stitle" style="margin-bottom:0">🏆 My Leagues</div>
+        <div class="flex g2">
+          <button class="btn btn-sm btn-s" onclick="MOD='jl';render()">Join</button>
+          <button class="btn btn-sm btn-p" onclick="MOD='cl';render()">+ New</button>
+        </div>
+      </div>
+      ${MyLeaguesList.length ? MyLeaguesList.map(l => {
+        const isHost = l.hostId === U.id;
+        return `<div class="lcard" onclick="AL='${l.id}';go('league')">
+          <div class="flex ic jb" style="margin-bottom:6px">
+            <div><div class="lcode">${l.code}</div><div style="font-size:16px;font-weight:700;margin-top:4px">${l.name}</div></div>
+            ${isHost ? `<span class="badge blk">HOST</span>` : ''}
+          </div>
+          <div class="flex g2 mt2" style="flex-wrap:wrap">
+            <span class="chip">👥 ${l.members.length} members</span>
+          </div>
+        </div>`;
+      }).join('')
+      : `<div class="empty"><div class="ei">🏆</div><p>No leagues yet</p><button class="btn btn-p" onclick="MOD='cl';render()">Create League</button></div>`}
+    </div>
+  `;
+}
+
+function rMatchCard(m, tappable = false){
+  const locked = isLocked(m);
+  const t = timeUntil(m);
+  const pred = ActiveLeaguePredictions.find(p => p.userId === U.id && p.matchId === m.id);
+  const pts = pred && m.status === 'done' ? calcPts(pred, m) : null;
+  const onclick = tappable && !locked && AL ? `onclick="MID='${m.id}';go('predict')"` :
+                  tappable && !locked ? `onclick="go('leagues')"` :
+                  `onclick="MID='${m.id}';go('predict')"`;
+  return `<div class="mc" ${onclick}>
+    <div class="mc-hdr">
+      <div class="flex ic g2">
+        <span class="badge ${m.status === 'done' ? 'bd2' : locked ? 'blk' : 'bu'}">${m.status === 'done' ? 'FT' : locked ? '🔒' : 'Open'}</span>
+        <span class="txs tmu">${m.stage}</span>
+      </div>
+      ${t ? `<span class="txs tp">⏰ ${t}</span>` : ''}
+    </div>
+    <div class="mc-teams">
+      <div class="team"><div class="tflag">${flagOf(m.home)}</div><div class="tname">${nameOf(m.home)}</div></div>
+      <div class="vs-box">${m.status === 'done' ? `<div class="sdis">${m.homeScore}-${m.awayScore}</div><div class="txs tgn">FT</div>` : `<div class="vs">VS</div><div class="txs tmu">${fmtDate(m.date)}</div>`}</div>
+      <div class="team"><div class="tflag">${flagOf(m.away)}</div><div class="tname">${nameOf(m.away)}</div></div>
+    </div>
+    ${pred ? `<div class="flex ic jb mt3" style="padding-top:10px;border-top:1px solid var(--bd)">
+      <span class="tsm tmu">Your pick: <strong style="color:var(--tx)">${pred.h}-${pred.a}</strong></span>
+      ${pts !== null ? `<span class="ptag ${ptClass(pts)}">${ptLabel(pts)}</span>` : `<span class="txs tmu">Pending result</span>`}
+    </div>` : (!locked && MyLeaguesList.length ? `<div class="txs tp tc mt2">Tap to predict →</div>` : '')}
+    <div class="txs tmu tc mt1">📍 ${m.venue}</div>
+  </div>`;
+}
+
+function rMatches(){
+  const ms = allMatches();
+  const filtered = MTAB === 'upcoming' ? ms.filter(m => !isLocked(m)) : MTAB === 'done' ? ms.filter(m => m.status === 'done') : ms;
+  return `
+    <div class="mt4">
+      <div class="stitle">⚽ WC 2026 Matches</div>
+      <div class="tabs">
+        <button class="tab ${MTAB === 'upcoming' ? 'on' : ''}" id="tab-matches-upcoming">Open</button>
+        <button class="tab ${MTAB === 'done' ? 'on' : ''}" id="tab-matches-done">Results</button>
+        <button class="tab ${MTAB === 'all' ? 'on' : ''}" id="tab-matches-all">All</button>
+      </div>
+      ${!MyLeaguesList.length ? `<div class="warn">⚠️ Join a league first to make predictions</div>` : ''}
+      ${filtered.length ? filtered.map(m => rMatchCard(m, true)).join('')
+      : `<div class="empty"><div class="ei">⚽</div><p>No ${MTAB === 'done' ? 'completed' : 'upcoming'} matches</p></div>`}
+    </div>
+  `;
+}
+
+function rLB(){
+  if(!MyLeaguesList.length) return `<div class="empty mt5"><div class="ei">📊</div><p>Join a league to see the leaderboard</p><button class="btn btn-p mt3" onclick="MOD='cl';render()">Create League</button></div>`;
+  const league = MyLeaguesList.find(l => l.id === AL);
+  const lb = getLB(AL);
+  const myRank = lb.findIndex(r => r.userId === U.id) + 1;
+  return `
+    <div class="mt4">
+      <div class="stitle">📊 Leaderboard</div>
+      ${MyLeaguesList.length > 1 ? `<div class="scrollx" style="margin-bottom:14px">
+        <div class="flex g2" style="width:max-content">
+          ${MyLeaguesList.map(l => `<button class="btn btn-sm ${AL === l.id ? 'btn-p' : 'btn-s'}" onclick="AL='${l.id}';window.changeLeague()">${l.name}</button>`).join('')}
+        </div>
+      </div>` : ''}
+      <div class="card" style="text-align:center;margin-bottom:16px">
+        <div class="tsm tmu">🏆 ${league?.name || 'Active League'}</div>
+        <div style="font-size:42px;font-weight:800;color:var(--gold);margin:4px 0">#${myRank || '—'}</div>
+        <div class="tsm tmu">Your rank of ${lb.length} players</div>
+      </div>
+      ${lb.map((r, i) => {
+        const medal = ['🥇','🥈','🥉'][i] || '';
+        const isMe = r.userId === U.id;
+        return `<div class="lbr r${i+1} ${isMe ? 'me' : ''}">
+          <div class="lbrank rk${i+1}">${medal || '#' + (i+1)}</div>
+          <div class="lbava" style="background:${col(r.name)}">${ini(r.name)}</div>
+          <div class="lbname">${r.name}${isMe ? ' (you)' : ''}</div>
+          <div class="flex ic g2">
+            <div class="tc"><div class="lbpts">${r.total}</div><div class="lbacc">${r.acc}% acc</div></div>
+            <div class="ptbadge">${r.n}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+window.changeLeague = async () => {
+  await syncAppData();
+};
+
+function rProfile(){
+  const myPreds = ActiveLeaguePredictions.filter(p => p.userId === U.id);
+  let tot = 0, exact = 0, wins = 0;
+  myPreds.forEach(p => {
+    const m = getMatch(p.matchId);
+    const pts = calcPts(p, m);
+    if(pts !== null){ tot += pts; if(pts >= 10) exact++; if(pts > 0) wins++; }
+  });
+  const acc = myPreds.length ? Math.round(wins / myPreds.length * 100) : 0;
+  return `
+    <div class="mt4">
+      <div class="card tc" style="margin-bottom:16px">
+        <div style="width:68px;height:68px;border-radius:50%;background:${col(U.name)};display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px;border:2.5px solid var(--p)">${ini(U.name)}</div>
+        <div style="font-size:19px;font-weight:700">${U.name}</div>
+        <div class="tsm tmu mt1">${U.email}</div>
+      </div>
+
+      <div class="stitle">📈 My Stats (Current Active League)</div>
+      <div class="sgrid">
+        <div class="scard"><div class="sval">${tot}</div><div class="slbl">Total Points</div></div>
+        <div class="scard"><div class="sval">${myPreds.length}</div><div class="slbl">Predictions</div></div>
+        <div class="scard"><div class="sval">${exact}</div><div class="slbl">Exact Scores</div></div>
+        <div class="scard"><div class="sval">${acc}%</div><div class="slbl">Accuracy</div></div>
+      </div>
+
+      <div class="stitle">⚙️ Set Match Result (Admin Verification)</div>
+      <div class="card card-sm" style="margin-bottom:16px">
+        <div class="fg"><label class="lbl">Match</label>
+          <select class="inp" id="asel">
+            ${MATCHES.map(m => `<option value="${m.id}">${m.stage}: ${nameOf(m.home)} vs ${nameOf(m.away)}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center;margin-bottom:12px">
+          <input class="inp" id="arh" type="number" value="2" style="text-align:center;font-size:20px">
+          <div class="sdash">-</div>
+          <input class="inp" id="ara" type="number" value="1" style="text-align:center;font-size:20px">
+        </div>
+        <button class="btn btn-p btn-w" id="btn-admin-result">Set Result & Update Live Scores</button>
+      </div>
+
+      <button class="btn btn-danger btn-w mt4" style="margin-bottom:20px" id="btn-logout-trigger">Sign Out</button>
+    </div>
+  `;
+}
+
+function rLeagueDetail(){
+  const l = MyLeaguesList.find(l => l.id === AL);
+  if(!l) return `<div class="empty"><p>League Context Disconnected</p><button class="btn btn-p" onclick="go('leagues')">Back</button></div>`;
+  const lb = getLB(AL);
+  const isHost = l.hostId === U.id;
+  const myPreds = ActiveLeaguePredictions.filter(p => p.userId === U.id);
+  return `
+    <div class="mt4">
+      <button class="btn btn-sm btn-s" onclick="go('leagues')" style="margin-bottom:14px">← Back</button>
+      <div class="card" style="margin-bottom:14px">
+        <div class="flex ic jb">
+          <div><div class="lcode">${l.code}</div><div style="font-size:18px;font-weight:700;margin-top:4px">${l.name}</div></div>
+          ${isHost ? `<span class="badge blk">HOST</span>` : ''}
+        </div>
+        <button class="btn btn-sm btn-s mt3" style="width:100%" id="btn-share-code" data-code="${l.code}">📋 Share Code: ${l.code}</button>
+      </div>
+
+      <div class="stitle">🏆 Leaderboard</div>
+      ${lb.map((r, i) => {
+        const medal = ['🥇','🥈','🥉'][i] || '';
+        const isMe = r.userId === U.id;
+        return `<div class="lbr r${i+1} ${isMe ? 'me' : ''}">
+          <div class="lbrank rk${i+1}">${medal || '#' + (i+1)}</div>
+          <div class="lbava" style="background:${col(r.name)}">${ini(r.name)}</div>
+          <div class="lbname">${r.name}${isMe ? ' ✓' : ''}</div>
+          <div class="flex ic g2">
+            <div class="tc"><div class="lbpts">${r.total}</div><div class="lbacc">${r.acc}%</div></div>
+            <div class="ptbadge">${r.n}</div>
+          </div>
+        </div>`;
+      }).join('')}
+
+      <div class="stitle mt5">🎯 My Predictions</div>
+      ${myPreds.length ? myPreds.map(p => {
+        const m = getMatch(p.matchId);
+        const pts = m.status === 'done' ? calcPts(p, m) : null;
+        return `<div class="card card-sm">
+          <div class="flex ic jb">
+            <span class="txs tmu">${m.stage} · ${fmtDate(m.date)}</span>
+            ${pts !== null ? `<span class="ptag ${ptClass(pts)}">${ptLabel(pts)}</span>` : `<span class="badge bu">Pending</span>`}
+          </div>
+          <div class="mc-teams mt2">
+            <div class="team"><div class="tflag" style="font-size:22px">${flagOf(m.home)}</div><div class="tname">${nameOf(m.home)}</div></div>
+            <div class="vs-box"><div class="sdis" style="font-size:20px">${p.h}-${p.a}</div></div>
+            <div class="team"><div class="tflag" style="font-size:22px">${flagOf(m.away)}</div><div class="tname">${nameOf(m.away)}</div></div>
+          </div>
+        </div>`;
+      }).join('') : `<div class="empty" style="padding:24px"><div class="tsm tmu">No predictions yet</div><button class="btn btn-p btn-sm mt3" onclick="go('matches')">Go Predict →</button></div>`}
+    </div>`;
+}
+
+function rPredict(){
+  if(!MID) return rMatches();
+  const m = getMatch(MID);
+  const existing = ActiveLeaguePredictions.find(p => p.userId === U.id && p.matchId === MID);
+  const locked = isLocked(m);
+  const t = timeUntil(m);
+  const allPreds = m.status === 'done' ? ActiveLeaguePredictions.filter(p => p.matchId === MID) : [];
+  return `
+    <div class="mt4">
+      <button class="btn btn-sm btn-s" onclick="go('matches')" style="margin-bottom:14px">← Back</button>
+      <div class="card">
+        <div class="flex ic jb" style="margin-bottom:12px">
+          <span class="badge ${m.status === 'done' ? 'bd2' : locked ? 'blk' : 'bu'}">${m.status === 'done' ? 'Full Time' : locked ? '🔒 Locked' : 'Open'}</span>
+          <span class="txs tmu">${m.stage}</span>
+        </div>
+        <div class="mc-teams">
+          <div class="team"><div class="tflag" style="font-size:44px">${flagOf(m.home)}</div><div class="tname" style="font-size:13px">${nameOf(m.home)}</div></div>
+          <div class="vs-box">${m.status === 'done' ? `<div class="sdis" style="font-size:30px">${m.homeScore}-${m.awayScore}</div>` : `<div class="vs" style="font-size:14px">VS</div>`}</div>
+          <div class="team"><div class="tflag" style="font-size:44px">${flagOf(m.away)}</div><div class="tname" style="font-size:13px">${nameOf(m.away)}</div></div>
+        </div>
+        <div class="txs tmu tc mt3">📍 ${m.venue} · 🗓 ${fmtDate(m.date)}</div>
+        ${t ? `<div class="warn mt3" style="justify-content:center">⏰ Deadline: ${t}</div>` : ''}
+      </div>
+
+      ${MyLeaguesList.length > 1 ? `<div class="fg"><label class="lbl">League context target</label>
+        <select class="inp" id="lsel">
+          ${MyLeaguesList.map(l => `<option value="${l.id}" ${l.id === AL ? 'selected' : ''}>${l.name}</option>`).join('')}
+        </select>
+      </div>` : ''}
+
+      ${!locked && MyLeaguesList.length ? `
+        <div class="card">
+          <div class="stitle">🎯 Your Prediction</div>
+          <div class="sinp-row">
+            <input class="sinp" id="ph" type="number" placeholder="0" value="${existing?.h ?? ''}">
+            <div class="sdash">-</div>
+            <input class="sinp" id="pa" type="number" placeholder="0" value="${existing?.a ?? ''}">
+          </div>
+          <div class="qpicks">
+            ${['0-0','1-0','0-1','1-1','2-0','0-2','2-1','1-2','2-2','3-0'].map(s => {
+              const[h,a] = s.split('-'); return `<button class="qp" onclick="qp(${h},${a})">${s}</button>`;
+            }).join('')}
+          </div>
+          <button class="btn btn-p btn-w mt3" id="btn-save-prediction-cloud">Submit Cloud Entry</button>
+        </div>
+      ` : `<div class="card tc">🔒 Predictions window unavailable</div>`}
+
+      ${allPreds.length ? `
+        <div class="stitle mt5">👥 All Predictions (${allPreds.length})</div>
+        ${allPreds.map(p => {
+          const userObj = CurrentLeagueUsers.find(u => u.id === p.userId);
+          const pts = calcPts(p, m);
+          return `<div class="card card-sm">
+            <div class="flex ic jb">
+              <span class="tsm w600">${userObj?.name || 'Anonymous Competitor'}</span>
+              <span style="font-size:16px;font-weight:700">${p.h}-${p.a}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      ` : ''}
+    </div>
+  `;
+}
+
+window.qp = (h, a) => {
+  const ph = document.getElementById('ph'), pa = document.getElementById('pa');
+  if (ph) ph.value = h; if (pa) pa.value = a;
+};
+
+// ─── MODALS METRICS ────────────────────────────────────────────
+function rModal(){
+  if(MOD === 'cl') return `
+    <div class="mov" id="modal-overlay">
+      <div class="mod">
+        <div class="mod-pull"></div>
+        <div class="mod-hdr"><div class="mod-title">🏆 Create League</div><button class="mod-x" onclick="MOD=null;render()">×</button></div>
+        <div class="mod-body">
+          <div class="fg"><label class="lbl">League Name</label><input class="inp" id="cln" placeholder="e.g. Work Mates WC26" autofocus></div>
+          <button class="btn btn-p btn-w" id="btn-modal-create">Create &amp; Get Code</button>
+        </div>
+      </div>
+    </div>`;
+  if(MOD === 'jl') return `
+    <div class="mov" id="modal-overlay">
+      <div class="mod">
+        <div class="mod-pull"></div>
+        <div class="mod-hdr"><div class="mod-title">🔗 Join League</div><button class="mod-x" onclick="MOD=null;render()">×</button></div>
+        <div class="mod-body">
+          <div class="fg"><label class="lbl">Invite Code</label><input class="inp" id="jlc" style="text-transform:uppercase" placeholder="ABC123" autofocus></div>
+          <button class="btn btn-gold btn-w" id="btn-modal-join">Join League</button>
+        </div>
+      </div>
+    </div>`;
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT LISTENER BINDING LAYER
+// ═══════════════════════════════════════════════════════════════
+function bEvents(){
+  // Dynamic Page Router Binding
+  NAVS.forEach(([id]) => {
+    document.getElementById(`nav-link-${id}`)?.addEventListener('click', () => window.go(id));
+  });
+  document.getElementById('hdr-profile-trigger')?.addEventListener('click', () => window.go('profile'));
+
+  // Modals Overlay Escape Event Trigger
+  document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+    if(e.target.id === 'modal-overlay') { MOD = null; render(); }
+  });
+
+  // Action Triggers based on context
+  document.getElementById('btn-modal-create')?.addEventListener('click', async () => {
+    const name = v('cln');
+    if(!name) return toast('Enter a league name', 'e');
+    try {
+      const newLeague = await dbCreateLeague(name, U.id);
+      MOD = null;
+      AL = newLeague.id;
+      toast('League Created Successfully!', 's');
+      await syncAppData();
+    } catch(err) { toast(err.message, 'e'); }
+  });
+
+  document.getElementById('btn-modal-join')?.addEventListener('click', async () => {
+    const code = v('jlc');
+    if(!code) return toast('Enter invite access token code', 'e');
+    try {
+      const targetId = await dbJoinLeague(code, U.id);
+      MOD = null;
+      AL = targetId;
+      toast('Welcome to the League! 🎉', 's');
+      await syncAppData();
+    } catch(err) { toast(err.message, 'e'); }
+  });
+
+  document.getElementById('btn-save-prediction-cloud')?.addEventListener('click', async () => {
+    const h = document.getElementById('ph')?.value, a = document.getElementById('pa')?.value;
+    if(!h || !a || h === '' || a === '') return toast('Fill out prediction metrics values', 'e');
+    try {
+      await dbSavePrediction(U.id, AL, MID, parseInt(h), parseInt(a));
+      toast('Cloud Sync Matrix Updated ✓', 's');
+      await syncAppData();
+    } catch(err) { toast(err.message, 'e'); }
+  });
+
+  document.getElementById('btn-share-code')?.addEventListener('click', (e) => {
+    const targetCode = e.target.getAttribute('data-code');
+    navigator.clipboard?.writeText(targetCode)
+      .then(() => toast('Code Copied to Clipboard!', 's'))
+      .catch(() => toast('Code token: ' + targetCode, 'i'));
+  });
+
+  document.getElementById('lsel')?.addEventListener('change', async (e) => {
+    AL = e.target.value;
+    await syncAppData();
+  });
+
+  document.getElementById('btn-admin-result')?.addEventListener('click', async () => {
+    const matchId = document.getElementById('asel')?.value;
+    const h = document.getElementById('arh')?.value;
+    const a = document.getElementById('ara')?.value;
+    try {
+      await updateMatchResult(matchId, h, a);
+      toast('Administrative Verification Metrics Written!', 's');
+      await syncAppData();
+    } catch(err) { toast(err.message, 'e'); }
+  });
+
+  document.getElementById('btn-logout-trigger')?.addEventListener('click', async () => {
+    await logoutUser();
+    U = null; AL = null; window.go('home');
+  });
+
+  // Matches Stage Filter Tabs
+  document.getElementById('tab-matches-upcoming')?.addEventListener('click', () => { MTAB = 'upcoming'; render(); });
+  document.getElementById('tab-matches-done')?.addEventListener('click', () => { MTAB = 'done'; render(); });
+  document.getElementById('tab-matches-all')?.addEventListener('click', () => { MTAB = 'all'; render(); });
+}
+
+// ─── PARTICLES ─────────────────────────────────────────────────
+function initParts(){
+  const w = document.getElementById('particles'); if(!w) return;
+  w.innerHTML = Array.from({length: 18}, (_, i) => {
+    const s = 6 + Math.random() * 18, l = Math.random() * 100, del = Math.random() * 12, dur = 10 + Math.random() * 20;
+    const c = i % 3 === 0 ? 'rgba(0,212,255,.18)' : i % 3 === 1 ? 'rgba(255,215,0,.1)' : 'rgba(168,85,247,.12)';
+    return `<div class="pt" style="width:${s}px;height:${s}px;background:${c};left:${l}%;animation-duration:${dur}s;animation-delay:${del}s"></div>`;
+  }).join('');
+}
+
+// ─── RUNTIME APP BOOTSTRAP INITIALIZATION ──────────────────────
+initParts();
+watchAuthState((user) => {
+  U = user;
+  if(user) {
+    syncAppData();
+  } else {
+    render();
+  }
+});
+</script>
+</body>
+</html>
+
+```
